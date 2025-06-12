@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions xmlns="http://axelor.com/xml/ns/actions"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://axelor.com/xml/ns/actions https://axelor.com/xml/ns/actions/actions_7.4.xsd">
+
+    <action-method name="action-attendance.importCsv">
+        <call class="com.axelor.attendance.web.AttendanceController" method="importCsv"/>
+    </action-method>
+
+    <action name="attendance.sessions" title="Attendance Sessions" model="com.axelor.attendance.db.AttendanceSession">
+        <view type="grid" name="attendance-session-grid"/>
+        <view type="form" name="attendance-session-form"/>
+    </action>
+
+
+</actions>
+
+
+

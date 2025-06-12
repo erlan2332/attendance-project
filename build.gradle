@@ -1,0 +1,49 @@
+plugins {
+  id 'com.axelor.app'
+}
+
+axelor {
+  title = 'Axelor :: DEMO'
+  version = "7.3.0"
+}
+
+allprojects {
+  apply plugin: 'idea'
+  apply plugin: 'eclipse'
+
+  group = 'com.axelor'
+  version = '7.4.0'
+
+  java {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(11)
+    }
+  }
+
+  afterEvaluate {
+    configurations {
+      // Remove Junit4, only keep Junit5 provided by AOP
+      testImplementation.exclude group: 'junit', module: 'junit'
+      testImplementation.exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+    test {
+      useJUnitPlatform()
+      beforeTest { descriptor ->
+        logger.lifecycle('Running: ' + descriptor)
+      }
+    }
+  }
+}
+
+dependencies {
+  // add module dependencies
+  implementation project(':modules:attendance-tracker')
+  implementation 'org.apache.commons:commons-csv:1.9.0'
+
+}
+
+war {
+  archiveFileName = 'open-platform-demo.war'
+}
+
+apply from: 'gradle/style.gradle'

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain-models
+        xmlns="http://axelor.com/xml/ns/domain-models"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://axelor.com/xml/ns/domain-models https://axelor.com/xml/ns/domain-models/domain-models_7.4.xsd">
+
+    <module name="attendance" package="com.axelor.attendance.db"/>
+
+    <entity name="AttendanceSession">
+        <string name="personId" title="Person ID" required="true"/>
+        <string name="fullName" title="Full Name" required="true"/>
+        <date name="sessionDate" title="Session Date" required="true"/>
+        <datetime name="sessionStart" title="Session Start"/>
+        <datetime name="sessionEnd" title="Session End"/>
+        <string name="officeDuration" title="Time in Office (HH:mm)"/>
+        <string name="sessionStartTime" title="Session Start Time"/>
+        <string name="outOfOfficeDuration" title="Time Out of Office (HH:mm)"/>
+        <one-to-many name="events" title="Access Events"
+                     ref="com.axelor.attendance.db.Event"
+                     mappedBy="attendanceSession"/>
+    </entity>
+
+</domain-models>
+

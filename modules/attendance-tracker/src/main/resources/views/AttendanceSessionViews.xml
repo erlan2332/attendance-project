@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object-views
+        xmlns="http://axelor.com/xml/ns/object-views"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://axelor.com/xml/ns/object-views https://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
+
+    <grid name="attendance-session-grid" title="Sessions" model="com.axelor.attendance.db.AttendanceSession" orderBy="-sessionDate, sessionStartTime, fullName">
+
+
+        <toolbar>
+            <button name="importCsvButton"
+                    title="Import CSV"
+                    icon="upload"
+                    onClick="csvImportAction"/>
+        </toolbar>
+
+
+        <field name="fullName" title="Name"/>
+        <field name="sessionDate" title="Date"/>
+
+        <field name="sessionStartTime" title="Come" format="HH:mm">
+            <hilite color="red" if="sessionStartTime &gt; '10:00'"/>
+        </field>
+
+        <field name="sessionEnd" format="HH:mm" title="Has left"/>
+        <field name="officeDuration" title="In office">
+            <hilite color="red" if="officeDuration &lt; '07:00'"/>
+        </field>
+        <field name="outOfOfficeDuration" title="outside the office"/>
+
+    </grid>
+
+    <form name="attendance-session-form" title="Attendance Session" model="com.axelor.attendance.db.AttendanceSession">
+        <panel>
+            <field name="fullName" title="Employee's name"/>
+            <field name="sessionEnd" format="dd.MM.yyyy HH:mm" title="Last exit time"/>
+            <field name="sessionDate" title="Session date"/>
+            <field name="officeDuration" title="Office time"/>
+            <field name="sessionStart" format="dd.MM.yyyy HH:mm" title="Arrival time"/>
+            <field name="outOfOfficeDuration" title="time out of the office"/>
+        </panel>
+
+        <panel-related name="eventsPanel" title="Session events" field="events" order-by="timestamp">
+            <field name="timestamp" title="Time" format="dd.MM.yyyy HH:mm"/>
+            <field name="eventType" title="Type"/>
+        </panel-related>
+
+    </form>
+
+</object-views>

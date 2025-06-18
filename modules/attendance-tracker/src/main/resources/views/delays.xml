@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views">
+
+    <custom name="kpi.late.avg.all.time"
+            title="Average lateness"
+            css="report-box">
+
+        <dataset type="jpql"><![CDATA[
+      SELECT
+        ROUND(
+          AVG(
+            CASE
+              WHEN (
+                (CAST(SUBSTRING(a.sessionStartTime, 1, 2) AS integer) * 60) +
+                (CAST(SUBSTRING(a.sessionStartTime, 4, 2) AS integer))
+              ) > 600
+              THEN (
+                (CAST(SUBSTRING(a.sessionStartTime, 1, 2) AS integer) * 60) +
+                (CAST(SUBSTRING(a.sessionStartTime, 4, 2) AS integer)) - 600
+              )
+              ELSE 0
+            END
+          ), 1
+        ) AS avgLate
+      FROM com.axelor.attendance.db.AttendanceSession a
+      WHERE a.sessionStartTime IS NOT NULL
+    ]]></dataset>
+
+        <template><![CDATA[
+      <report-box icon='clock'
+                  label='average lateness (min.)'
+                  value='first.avgLate'/>
+    ]]></template>
+
+    </custom>
+
+</object-views>

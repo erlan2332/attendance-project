@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views">
+
+    <custom name="kpi.office.length.day.time"
+            title="Average office time"
+            css="report-box">
+        <dataset type="jpql"><![CDATA[
+      SELECT
+        FUNCTION(
+          'concat',
+          FUNCTION(
+            'lpad',
+            CAST( FLOOR( AVG(
+              CAST( FUNCTION('split_part', a.officeDuration, ':', 1) AS integer ) * 60 +
+              CAST( FUNCTION('split_part', a.officeDuration, ':', 2) AS integer )
+            ) / 60 ) AS text ),
+            2,
+            '0'
+          ),
+          ':',
+          FUNCTION(
+            'lpad',
+            CAST(
+              MOD(
+                CAST( AVG(
+                  CAST( FUNCTION('split_part', a.officeDuration, ':', 1) AS integer ) * 60 +
+                  CAST( FUNCTION('split_part', a.officeDuration, ':', 2) AS integer )
+                ) AS integer ),
+              60) AS text
+            ),
+            2,
+            '0'
+          )
+        ) AS avgOffice
+      FROM com.axelor.attendance.db.AttendanceSession a
+      WHERE a.officeDuration IS NOT NULL
+    ]]></dataset>
+
+        <template><![CDATA[
+      <report-box icon='briefcase'
+                  label='average office time'
+                  value='first.avgOffice'/>
+    ]]></template>
+
+    </custom>
+</object-views>

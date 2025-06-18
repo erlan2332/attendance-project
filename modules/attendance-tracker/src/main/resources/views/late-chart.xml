@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views">
+
+    <chart name="chart.late.avg.by.employee"
+           title="Average lateness by employee">
+
+        <dataset type="jpql"><![CDATA[
+      SELECT
+        a.fullName                                                       AS employee,
+        ROUND(
+          AVG(
+            CASE
+              WHEN (
+                (CAST(SUBSTRING(a.sessionStartTime, 1, 2) AS integer) * 60) +
+                (CAST(SUBSTRING(a.sessionStartTime, 4, 2) AS integer))
+              ) > 600
+              THEN (
+                (CAST(SUBSTRING(a.sessionStartTime, 1, 2) AS integer) * 60) +
+                (CAST(SUBSTRING(a.sessionStartTime, 4, 2) AS integer)) - 600
+              )
+              ELSE 0
+            END
+          )
+        , 1)                                                            AS avgLate
+      FROM com.axelor.attendance.db.AttendanceSession a
+      WHERE a.sessionStartTime IS NOT NULL
+      GROUP BY a.fullName
+      HAVING AVG(
+               CASE
+                 WHEN (
+                   (CAST(SUBSTRING(a.sessionStartTime, 1, 2) AS integer) * 60) +
+                   (CAST(SUBSTRING(a.sessionStartTime, 4, 2) AS integer))
+                 ) > 600
+                 THEN (
+                   (CAST(SUBSTRING(a.sessionStartTime, 1, 2) AS integer) * 60) +
+                   (CAST(SUBSTRING(a.sessionStartTime, 4, 2) AS integer)) - 600
+                 )
+                 ELSE 0
+               END
+             ) > 0
+      ORDER BY avgLate DESC
+    ]]></dataset>
+
+        <category key="employee" type="text" title="Employee"/>
+        <series   key="avgLate"  type="bar"  title="Avg lateness (min.)"/>
+        <config   name="height"  value="350"/>
+        <config   name="colors"  value="macarons"/>
+
+    </chart>
+
+</object-views>

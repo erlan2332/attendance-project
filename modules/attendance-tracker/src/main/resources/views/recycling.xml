@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views">
+
+    <chart name="time.overworking"
+           title="Office time distribution">
+
+        <dataset type="jpql"><![CDATA[
+      SELECT
+        CASE
+          WHEN (
+            CAST(FUNCTION('split_part', a.officeDuration, ':', 1) AS integer) * 60 +
+            CAST(FUNCTION('split_part', a.officeDuration, ':', 2) AS integer)
+          ) > 540
+          THEN '> 9 h'
+
+          WHEN (
+            CAST(FUNCTION('split_part', a.officeDuration, ':', 1) AS integer) * 60 +
+            CAST(FUNCTION('split_part', a.officeDuration, ':', 2) AS integer)
+          ) > 420
+          THEN '7–9 h'
+
+          WHEN (
+            CAST(FUNCTION('split_part', a.officeDuration, ':', 1) AS integer) * 60 +
+            CAST(FUNCTION('split_part', a.officeDuration, ':', 2) AS integer)
+          ) > 300
+          THEN '5–7 h'
+
+          ELSE '≤ 5 h'
+        END         AS workGroup,
+        COUNT(a.id) AS cnt
+      FROM com.axelor.attendance.db.AttendanceSession a
+      WHERE a.officeDuration IS NOT NULL
+      GROUP BY workGroup
+    ]]></dataset>
+
+        <category key="workGroup" type="text" title="Hours in office"/>
+        <series  key="cnt" type="donut" title="Sessions"/>
+        <config name="percent" value="true"/>
+        <config name="colors"  value="emerald, blue ,indigo,gray,white"/>
+        <config name="height"  value="350"/>
+
+    </chart>
+
+</object-views>

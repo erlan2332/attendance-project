@@ -12,18 +12,18 @@ import com.google.inject.Singleton;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javax.inject.Provider;
 import javax.persistence.EntityManager;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,9 +36,11 @@ public class AttendanceService {
     private final Provider<EntityManager> entityManagerProvider;
 
     @Inject
-    public AttendanceService(AttendanceSessionRepository sessionRepo,
-                             EventRepository eventRepo,
-                             Provider<EntityManager> entityManagerProvider) {
+    public AttendanceService(
+            AttendanceSessionRepository sessionRepo,
+            EventRepository eventRepo,
+            Provider<EntityManager> entityManagerProvider
+    ) {
         this.sessionRepo = sessionRepo;
         this.eventRepo = eventRepo;
         this.entityManagerProvider = entityManagerProvider;
@@ -47,65 +49,75 @@ public class AttendanceService {
     public void importCsvAndProcess(EventImportWizard wizard) {
         MetaFile metaFile = wizard.getCsvData();
         if (metaFile == null) {
-            throw new IllegalStateException("CSV файл не выбран.");
+            throw new IllegalStateException("Файл не выбран.");
         }
 
         File file = MetaFiles.getPath(metaFile).toFile();
-        System.out.println("Путь к файлу: " + (file != null ? file.getAbsolutePath() : "null"));
-
         if (file == null || !file.exists() || !file.canRead()) {
-            throw new IllegalStateException("CSV файл не найден или недоступен для чтения: " + file);
+            throw new IllegalStateException("Файл не найден или недоступен для чтения: " + file);
         }
 
+        String fileName = file.getName().toLowerCase();
+        if (fileName.endsWith(".csv")) {
+            importFromCsv(file);
+        } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+            importFromExcel(file);
+        } else {
+            throw new IllegalArgumentException("Поддерживаются только CSV, XLS, XLSX");
+        }
+
+        calculateAttendanceSessions();
+    }
+
+    private void importFromExcel(File file) {
+        System.out.println("📄 Импорт из Excel: " + file.getName());
         EntityManager em = entityManagerProvider.get();
         em.getTransaction().begin();
 
         int counter = 0;
         int batchSize = 50;
-
-        // Изменён форматтер – теперь ожидаем дату в виде "yyyy-MM-dd HH:mm:ss"
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        try (InputStream is = new FileInputStream(file);
-             // Если ваш файл сохранён с BOM в UTF-8, стандартная кодировка UTF-8 должна подойти
-             InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-             BufferedReader reader = new BufferedReader(isr)) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            Workbook workbook = file.getName().endsWith(".xlsx") ? new XSSFWorkbook(fis) : new HSSFWorkbook(fis);
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
 
-            String line;
-            // Пропускаем строки до заголовка, который начинается с "Person ID;"
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().startsWith("Person ID;")) {
-                    break;
+            boolean headerFound = false;
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                if (!headerFound) {
+                    if (row.getCell(0) != null && getCellValue(row.getCell(0)).toLowerCase().contains("person id")) {
+                        headerFound = true;
+                    }
+                    continue; // Пропускаем строку с заголовками
                 }
-            }
 
-            CSVParser csvParser = CSVFormat.DEFAULT
-                    .withDelimiter(';')
-                    .withHeader("Person ID", "Name", "Department", "Time", "Attendance Check Point")
-                    .withSkipHeaderRecord(true)
-                    .withIgnoreEmptyLines(true)
-                    .parse(reader);
+                if (row.getPhysicalNumberOfCells() < 5) continue;
 
-            for (CSVRecord record : csvParser) {
                 try {
-                    String personId = record.get("Person ID").replace("'", "").trim();
-                    String fullName = record.get("Name").trim();
-                    String location = record.get("Department").trim();
-                    String timeStr = record.get("Time").trim();
-                    String checkpoint = record.get("Attendance Check Point").trim();
+                    String personId = getCellValue(row.getCell(0)).replace("'", "").trim();
+                    String fullName = getCellValue(row.getCell(1)).trim();
+                    String location = getCellValue(row.getCell(2)).trim();
+                    String timeStr = getCellValue(row.getCell(3)).trim();
+                    String checkpoint = getCellValue(row.getCell(4)).trim();
 
                     if (personId.isEmpty() || timeStr.isEmpty() || checkpoint.isEmpty()) continue;
 
-                    LocalDateTime timestamp = LocalDateTime.parse(timeStr, fmt);
-
-                    String type = "";
-                    String lowerCheckpoint = checkpoint.toLowerCase();
-                    if (lowerCheckpoint.startsWith("entrance")) {
-                        type = "IN";
-                    } else if (lowerCheckpoint.startsWith("exit")) {
-                        type = "OUT";
+                    LocalDateTime timestamp;
+                    try {
+                        timestamp = LocalDateTime.parse(timeStr, fmt);
+                    } catch (Exception e) {
+                        System.out.println("⛔ Неверный формат даты: " + timeStr);
+                        continue;
                     }
-                    if (type.isEmpty()) continue;
+
+                    String type = getEventType(checkpoint);
+                    if (type == null) {
+                        System.out.println("⚠️ Неизвестный тип события: " + checkpoint);
+                        continue;
+                    }
 
                     Event event = new Event();
                     event.setPersonId(personId);
@@ -117,30 +129,129 @@ public class AttendanceService {
                     eventRepo.save(event);
                     counter++;
 
-                    // Пакетное сохранение
                     if (counter % batchSize == 0) {
                         em.flush();
                         em.clear();
                     }
 
                 } catch (Exception ex) {
-                    System.out.println("Пропущена строка из-за ошибки: " + ex.getMessage());
+                    System.out.println("⚠️ Ошибка при обработке строки: " + ex.getMessage());
                 }
             }
 
             em.getTransaction().commit();
-            System.out.println("Импортировано: " + counter);
+            System.out.println("✅ Импортировано из Excel: " + counter);
 
         } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-            throw new RuntimeException("❌ Ошибка обработки CSV", e);
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            throw new RuntimeException("Ошибка обработки Excel-файла", e);
         }
-        calculateAttendanceSessions();
     }
 
+    private void importFromCsv(File file) {
+        System.out.println("📄 Импорт из CSV: " + file.getName());
+        EntityManager em = entityManagerProvider.get();
+        em.getTransaction().begin();
 
+        int counter = 0;
+        int batchSize = 50;
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().startsWith("Person ID;")) break;
+            }
+
+            CSVParser csvParser = CSVFormat.DEFAULT
+                    .withDelimiter(';')
+                    .withHeader("Person ID", "Name", "Department", "Time", "Attendance Check Point")
+                    .withSkipHeaderRecord(true)
+                    .withIgnoreEmptyLines(true)
+                    .parse(reader);
+
+            for (CSVRecord record : csvParser) {
+                try {
+                    if (record.size() < 5) continue;
+
+                    String personId = record.get("Person ID").replace("'", "").trim();
+                    String fullName = record.get("Name").trim();
+                    String location = record.get("Department").trim();
+                    String timeStr = record.get("Time").trim();
+                    String checkpoint = record.get("Attendance Check Point").trim();
+
+                    if (personId.isEmpty() || timeStr.isEmpty() || checkpoint.isEmpty()) continue;
+
+                    LocalDateTime timestamp;
+                    try {
+                        timestamp = LocalDateTime.parse(timeStr, fmt);
+                    } catch (Exception e) {
+                        System.out.println("⛔ Неверный формат даты: " + timeStr);
+                        continue;
+                    }
+
+                    String type = getEventType(checkpoint);
+                    if (type == null) {
+                        System.out.println("⚠️ Неизвестный тип события: " + checkpoint);
+                        continue;
+                    }
+
+                    Event event = new Event();
+                    event.setPersonId(personId);
+                    event.setFullName(fullName);
+                    event.setLocation(location);
+                    event.setTimestamp(timestamp);
+                    event.setEventType(type);
+
+                    eventRepo.save(event);
+                    counter++;
+
+                    if (counter % batchSize == 0) {
+                        em.flush();
+                        em.clear();
+                    }
+
+                } catch (Exception ex) {
+                    System.out.println("⚠️ Ошибка при обработке строки: " + ex.getMessage());
+                }
+            }
+
+            em.getTransaction().commit();
+            System.out.println("✅ Импортировано из CSV: " + counter);
+
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            throw new RuntimeException("Ошибка обработки CSV-файла", e);
+        }
+    }
+
+    private String getCellValue(Cell cell) {
+        if (cell == null) return "";
+        int type = cell.getCellType();
+        if (type == 1) return cell.getStringCellValue().trim(); // STRING
+        else if (type == 0) { // NUMERIC
+            if (DateUtil.isCellDateFormatted(cell)) {
+                Date date = cell.getDateCellValue();
+                LocalDateTime dt = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                return dt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            } else {
+                return String.valueOf((long) cell.getNumericCellValue());
+            }
+        } else if (type == 2) return cell.getCellFormula(); // FORMULA
+        else if (type == 4) return String.valueOf(cell.getBooleanCellValue()); // BOOLEAN
+        return "";
+    }
+
+    private String getEventType(String checkpoint) {
+        if (checkpoint == null) return null;
+        String cp = checkpoint.trim().toLowerCase();
+
+        if (cp.startsWith("entrance") || cp.contains(" entrance")) return "IN";
+        if (cp.startsWith("exit") || cp.contains(" exit")) return "OUT";
+        if (cp.contains("entrance door")) return "IN";
+        if (cp.contains("exit door")) return "OUT";
+        return null;
+    }
 
 
     public void calculateAttendanceSessions() {

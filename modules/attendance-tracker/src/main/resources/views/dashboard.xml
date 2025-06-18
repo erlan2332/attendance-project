@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://axelor.com/xml/ns/object-views
+  https://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
+
+    <dashboard name="dashboard.lunch" title="Lunch KPI">
+        <dashlet title="Average"   action="custom:kpi.lunch.avg.all" colSpan="4"/>
+        <dashlet title="Avg lateness" action="chart:chart.late.avg.by.employee" colSpan="8"/>
+        <dashlet title="average delay time" action="custom:kpi.late.avg.all.time" colSpan="4" />
+        <dashlet title="working day length"   action="custom:kpi.office.length.day.time" colSpan="4"/>
+        <dashlet title="time for overworking" action="chart:time.overworking" colSpan="8" />
+    </dashboard>
+
+    <action-view name="statistic-ac" title="Statistic">
+         <view type="dashboard" name="dashboard.lunch" />
+    </action-view>
+
+
+</object-views>

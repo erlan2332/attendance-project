@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://axelor.com/xml/ns/object-views https://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
+
+    <custom title="Top employees" name="custom.top.employees">
+        <dataset type="sql">
+            <![CDATA[
+                WITH stats AS (
+                    SELECT
+                        au.name AS employee,
+                        COUNT(oo.id) AS order_count
+                      FROM auth_user au
+                      JOIN order_orderr oo ON au.id = oo.user_id
+                      GROUP BY au.name
+                    )
+                    SELECT
+                      (SELECT employee FROM stats ORDER BY order_count DESC LIMIT 1) AS "maxEmployee",
+                      (SELECT order_count FROM stats ORDER BY order_count DESC LIMIT 1) AS "maxOrderCount",
+                      (SELECT employee FROM stats WHERE order_count > 0 ORDER BY order_count ASC LIMIT 1) AS "minEmployee",
+                      (SELECT order_count FROM stats WHERE order_count > 0 ORDER BY order_count ASC LIMIT 1) AS "minOrderCount";
+
+            ]]>
+        </dataset>
+        <template>
+            <![CDATA[
+                <div style="width: 100%; display: flex; justify-content: space-evenly">
+                    <div style="display: flex; flex-direction: column; gap: 10px">
+                        <report-box value='first.maxEmployee'/>
+                        <report-box label='Больше всего заказов' value='first.maxOrderCount'/>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px">
+                        <report-box value='first.minEmployee'/>
+                        <report-box label='Меньше всего заказов' value='first.minOrderCount'/>
+                    </div>
+                </div>
+            ]]>
+        </template>
+
+
+    </custom>
+</object-views>

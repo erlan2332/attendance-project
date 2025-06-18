@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views">
+
+    <custom name="kpi.lunch.avg.all"
+            title="Average lunch time"
+            css="report-box">
+
+        <dataset type="jpql"><![CDATA[
+      SELECT COALESCE(
+               ROUND(
+                 AVG(
+                   CAST( FUNCTION('split_part', a.outOfOfficeDuration, ':', 1) AS integer ) * 60 +
+                   CAST( FUNCTION('split_part', a.outOfOfficeDuration, ':', 2) AS integer )
+                 ), 1
+               ),
+             0) AS avgLunch
+      FROM AttendanceSession a
+      WHERE a.outOfOfficeDuration IS NOT NULL
+    ]]></dataset>
+
+        <template><![CDATA[
+      <report-box icon='utensils'
+                  label='average lunch time (min.)'
+                  value='first.avgLunch'/>
+    ]]></template>
+
+    </custom>
+</object-views>

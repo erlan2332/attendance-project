@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain-models xmlns="http://axelor.com/xml/ns/domain-models"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://axelor.com/xml/ns/domain-models https://axelor.com/xml/ns/domain-models/domain-models_7.4.xsd">
+
+    <module name="order" package="com.axelor.order.db"/>
+
+    <entity name="Orderr" cacheable="true">
+        <many-to-one name="user" ref="com.axelor.auth.db.User" column="user_id"/>
+        <many-to-one name="dish" ref="Dish"/>
+        <string name="portion_size" required="true"/>
+        <time name="orderrTime"/>
+    </entity>
+
+</domain-models>

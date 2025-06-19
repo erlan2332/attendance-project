@@ -57,7 +57,7 @@ public class EmployeePanel {
             Orderr order = new Orderr();
             order.setUser(user);
             pendingOrders.put(chatId, order);
-//            showDishList(chatId);
+
             employeePanel(chatId, user);
             return;
         }
@@ -94,7 +94,6 @@ public class EmployeePanel {
             order.setUser(user);
             pendingOrders.put(chatId, order);
 
-//            showDishList(chatId);
             employeePanel(chatId, user);
         }
     }
@@ -107,11 +106,11 @@ public class EmployeePanel {
 
         InlineKeyboardButton btn_my_orders = new InlineKeyboardButton("\uD83D\uDCDC Мои заказы").callbackData("my_orders");
         InlineKeyboardButton btn_make_order = new InlineKeyboardButton("\uD83E\uDD61 Сделать заказ").callbackData("make_order");
-        InlineKeyboardButton btn_back_role_choose = new InlineKeyboardButton("⬅\uFE0F Назад").callbackData("back_role_choose");
+        InlineKeyboardButton btn_back_role_choose = new InlineKeyboardButton("⬅️ Назад").callbackData("back_role_choose");
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.addRow(btn_my_orders, btn_make_order);
         markup.addRow(btn_back_role_choose);
-        botService.sendMessage(String.valueOf(chatId), "Добро пожаловать, " + user.getName(), markup);
+        botService.sendMessage(String.valueOf(chatId), "Добро пожаловать", markup);
     }
 
     public void employeePanelNav(Update update) {
@@ -150,7 +149,7 @@ public class EmployeePanel {
             text.append("\uD83D\uDE45 У вас еще нет заказов");
         }
 
-        InlineKeyboardButton btn_back_employee_panel = new InlineKeyboardButton("⬅\uFE0F Назад").callbackData("back_employee_panel");
+        InlineKeyboardButton btn_back_employee_panel = new InlineKeyboardButton("⬅️ Назад").callbackData("back_employee_panel");
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(btn_back_employee_panel);
 
         botService.sendMessage(String.valueOf(chatId), text.toString(), markup);
@@ -174,11 +173,11 @@ public class EmployeePanel {
         Menu menu = menuService.getTomorrowMenu();
         List<Dish> dishes = menu.getDishes();
         StringBuilder text = new StringBuilder();
-        text.append("\uD83C\uDF7D Выберите блюдо: ");
 
-        if (dishes.isEmpty()) {
-            text.append("\n\n\uD83D\uDE45 Меню на завтра пустое");
-            return;
+        if (menu == null || menu.getDishes() == null || menu.getDishes().isEmpty()) {
+            text.append("\uD83D\uDE45 Меню на завтра пустое \n");
+        } else {
+            text.append("\uD83C\uDF7D Выберите блюдо: ");
         }
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
@@ -187,7 +186,7 @@ public class EmployeePanel {
                     .callbackData("select_dish:" + dish.getId());
             markup.addRow(button);
         }
-        InlineKeyboardButton bnt_back_employee_panel = new InlineKeyboardButton("⬅\uFE0FНазад").callbackData("back_employee_panel");
+        InlineKeyboardButton bnt_back_employee_panel = new InlineKeyboardButton("⬅️Назад").callbackData("back_employee_panel");
         markup.addRow(bnt_back_employee_panel);
 
         SendMessage sendMessage = new SendMessage(String.valueOf(chatId), text.toString()).replyMarkup(markup);
@@ -259,3 +258,6 @@ public class EmployeePanel {
         employeePanel(chatId, user);
     }
 }
+
+
+// todo  оценка блюд, книга жалоб/предложений

@@ -29,7 +29,6 @@ public class TgBotService {
         return this.bot;
     }
 
-
     public void sendMessage(String chatId, String messageText) {
         SendMessage request = new SendMessage(chatId, messageText);
         SendResponse response = bot.execute(request);

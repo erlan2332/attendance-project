@@ -6,6 +6,8 @@ import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class UserServiceImpl implements UserService{
 
@@ -43,4 +45,13 @@ public class UserServiceImpl implements UserService{
         return userRepository.all().filter("self.tg_id = ?", telegramId).fetchOne();
     }
 
+    @Override
+    public List<String> getUsersTelegramId() {
+        return userRepository.all()
+                .fetch()
+                .stream()
+                .map(User::getTg_id)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
 }

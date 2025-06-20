@@ -9,4 +9,5 @@ public interface DishService {
     Dish getDishById(long id);
     Dish createDish(Dish dish);
     void deleteDish(long id);
+//    void setDishRating(long dishId, Integer rating);
 }

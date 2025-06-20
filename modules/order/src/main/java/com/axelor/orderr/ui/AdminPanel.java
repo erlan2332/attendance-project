@@ -1,14 +1,12 @@
 package com.axelor.orderr.ui;
 
 import com.axelor.auth.db.User;
-import com.axelor.order.db.Complaints;
-import com.axelor.order.db.Dish;
-import com.axelor.order.db.Menu;
-import com.axelor.order.db.Orderr;
+import com.axelor.order.db.*;
 import com.axelor.orderr.service.complaints.ComplaintsService;
 import com.axelor.orderr.service.dish.DishService;
 import com.axelor.orderr.service.menu.MenuService;
 import com.axelor.orderr.service.order.OrderService;
+import com.axelor.orderr.service.rating.DishRatingService;
 import com.axelor.orderr.service.user.UserService;
 import com.google.inject.Inject;
 import com.pengrad.telegrambot.model.CallbackQuery;
@@ -33,13 +31,14 @@ public class AdminPanel {
 
 
     @Inject
-    public AdminPanel(TgBotService botService, DishService dishService, MenuService menuService, UserService userService, OrderService orderService, ComplaintsService complaintsService) {
+    public AdminPanel(TgBotService botService, DishService dishService, MenuService menuService, UserService userService, OrderService orderService, ComplaintsService complaintsService, DishRatingService dishRatingService) {
         this.botService = botService;
         this.dishService = dishService;
         this.menuService = menuService;
         this.userService = userService;
         this.orderService = orderService;
         this.complaintsService = complaintsService;
+        this.dishRatingService = dishRatingService;
     }
 
     // Авторизация админа
@@ -174,7 +173,6 @@ public class AdminPanel {
             }
         }
     }
-
 
     // удаление блюда
     public void showDeletionMenu(long chatId) {

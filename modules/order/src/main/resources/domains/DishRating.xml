@@ -5,10 +5,9 @@
 
     <module name="order" package="com.axelor.order.db"/>
 
-    <entity name="Dish" cacheable="true">
-        <string name="name"/>
-        <many-to-one name="menu" ref="Menu"/>
-        <one-to-many name="ratings" ref="DishRating" mappedBy="dish"/>
+    <entity name="DishRating">
+        <long name="dish_rating"/>
+        <many-to-one name="dish" ref="Dish"/>
     </entity>
 
 </domain-models>

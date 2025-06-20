@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://axelor.com/xml/ns/object-views https://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
+
+    <chart title="Dishes rating by points" name="chart.dishes.five.star.system.rating">
+        <dataset type="sql">
+            <![CDATA[
+                SELECT
+                    d.name AS dish_name,
+                    EXTRACT(MONTH FROM r.created_on) AS rating_month,
+                    AVG(r.dish_rating) AS average_rating
+                FROM order_dish d
+                JOIN order_dish_rating r ON r.dish = d.id
+                GROUP BY d.name, EXTRACT(MONTH FROM r.created_on)
+                ORDER BY d.name, rating_month;
+            ]]>
+        </dataset>
+        <category key="rating_month" type="text"/>
+        <series key="average_rating" groupBy="dish_name" type="bar"/>
+    </chart>
+
+
+</object-views>

@@ -4,9 +4,10 @@
               xsi:schemaLocation="http://axelor.com/xml/ns/object-views https://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
 
     <dashboard title="Orders" name="orders.dashboard">
-        <dashlet action="chart:chart.most.popular.food.pie"/>
-        <dashlet action="chart:chart.most.popular.portion"/>
-        <dashlet colSpan="12" action="custom:report.employees.with.no.orders"/>
+        <dashlet colSpan="6" action="chart:chart.most.popular.food.pie"/>
+        <dashlet action="chart:chart.dishes.five.star.system.rating"/>
+        <dashlet colSpan="6" action="chart:chart.most.popular.portion"/>
+        <dashlet colSpan="6"  action="custom:report.employees.with.no.orders"/>
         <dashlet action="custom:custom.top.employees"/>
         <dashlet action="custom:custom.average.check"/>
         <dashlet action="custom:custom.total.sum.ever"/>
@@ -16,9 +17,7 @@
         <view type="dashboard" name="orders.dashboard"/>
     </action-view>
 
-
     <menuitem name="menu-order-reports"
               title="lunch statistics" action="orders"/>
-
 
 </object-views>

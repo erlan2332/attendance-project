@@ -9,6 +9,7 @@ import com.axelor.orderr.service.complaints.ComplaintsService;
 import com.axelor.orderr.service.dish.DishService;
 import com.axelor.orderr.service.menu.MenuService;
 import com.axelor.orderr.service.order.OrderService;
+import com.axelor.orderr.service.rating.DishRatingService;
 import com.axelor.orderr.service.user.UserService;
 import com.google.inject.Inject;
 import com.pengrad.telegrambot.model.CallbackQuery;
@@ -29,6 +30,7 @@ public class EmployeePanel {
     private final MenuService menuService;
     private final OrderService orderService;
     private final ComplaintsService complaintsService;
+    private final DishRatingService dishRatingService;
 
     private final Map<Long, Long> pendingRegistration = new HashMap<>();
     private final Map<Long, Integer> registrationMessage = new HashMap<>();
@@ -38,13 +40,14 @@ public class EmployeePanel {
     private final Map<Long, Complaints> pendingCompl = new HashMap<>();
 
     @Inject
-    public EmployeePanel(TgBotService botService, UserService userService, DishService dishService, MenuService menuService, OrderService orderService, ComplaintsService complaintsService) {
+    public EmployeePanel(TgBotService botService, UserService userService, DishService dishService, MenuService menuService, OrderService orderService, ComplaintsService complaintsService, DishRatingService dishRatingService) {
         this.botService = botService;
         this.userService = userService;
         this.dishService = dishService;
         this.menuService = menuService;
         this.orderService = orderService;
         this.complaintsService = complaintsService;
+        this.dishRatingService = dishRatingService;
     }
 
 
@@ -215,7 +218,7 @@ public class EmployeePanel {
             return;
         }
         if (!pendingOrders.containsKey(chatId)) {
-            botService.sendMessage(String.valueOf(chatId), "\uD83D\uDE45 Заказ не найден. Попробуйте начать заказ снова.");
+            botService.sendMessage(String.valueOf(chatId), "\uD83D\uDE45 Заказ не сделан. Попробуйте начать заказ снова. \uD83D\uDC49\uD83C\uDFFC /start");
             return;
         }
 
@@ -246,12 +249,13 @@ public class EmployeePanel {
 
         // Проверяем, что заказ есть
         if (!pendingOrders.containsKey(chatId)) {
-            botService.sendMessage(String.valueOf(chatId), "\uD83D\uDE45 Заказ не найден. Попробуйте начать заказ заново.");
+            botService.sendMessage(String.valueOf(chatId), "\uD83D\uDE45 Заказ не сделан. Попробуйте начать заказ заново. \uD83D\uDC49\uD83C\uDFFC /start");
             return;
         }
         Orderr order = pendingOrders.get(chatId);
         order.setPortion_size(portionSize);
 
+        long dishId = order.getDish().getId();
         Orderr persistedOrder = orderService.makeOrder(order.getUser(), order.getDish(), order.getPortion_size());
 
         pendingOrders.remove(chatId);
@@ -259,14 +263,40 @@ public class EmployeePanel {
             botService.safeDelete(String.valueOf(chatId), portionSelectionMessages.get(chatId));
             portionSelectionMessages.remove(chatId);
         }
+
+        employeePanel(chatId, user);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(
+                new InlineKeyboardButton("⭐️").callbackData("rateDish:" + dishId + ":1"),
+                new InlineKeyboardButton("⭐️").callbackData("rateDish:" + dishId + ":2"),
+                new InlineKeyboardButton("⭐️").callbackData("rateDish:" + dishId + ":3"),
+                new InlineKeyboardButton("⭐️").callbackData("rateDish:" + dishId + ":4"),
+                new InlineKeyboardButton("⭐️").callbackData("rateDish:" + dishId + ":5")
+        );
+
         botService.sendMessage(String.valueOf(chatId), "✅ Ваш заказ сохранён!\n" +
                 persistedOrder.getUser().getName() + "\n" +
                 persistedOrder.getDish().getName() + " порция " +
-                persistedOrder.getPortion_size());
-
-        employeePanel(chatId, user);
+                persistedOrder.getPortion_size() +
+                "\n\nНе забудьте оценить блюдо, когда опробуете", markup);
     }
 
+        // оценка блюд
+    public void dishRating(Update update) {
+        if (update.callbackQuery() == null) return;
+        CallbackQuery callback = update.callbackQuery();
+        long chatId = callback.maybeInaccessibleMessage().chat().id();
+        int messageId = callback.maybeInaccessibleMessage().messageId();
+        botService.safeDelete(String.valueOf(chatId), messageId);
+
+        String[] parts = callback.data().split(":");
+        long dishId = Long.parseLong(parts[1]);
+        Integer rating = Integer.valueOf(parts[2]);
+
+        dishRatingService.setDishRating(dishId, rating);
+    }
+
+    // Жалобы/предложения
     public boolean isComplWriting(long chatId) {
         return pendingCompl.containsKey(chatId);
     }
@@ -283,6 +313,3 @@ public class EmployeePanel {
         }
     }
 }
-
-
-// todo  оценка блюд, книга жалоб/предложений

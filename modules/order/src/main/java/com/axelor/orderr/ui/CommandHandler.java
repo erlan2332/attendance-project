@@ -75,6 +75,8 @@ public class CommandHandler {
                 employeePanel.employeePanelNav(update);
             } else if ("back_employee_panel".equals(data)) {
                 employeePanel.backToEmployeePanel(update);
+            } else if (data.startsWith("rateDish:")) {
+                employeePanel.dishRating(update);
             }
         }
 

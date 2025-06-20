@@ -31,14 +31,13 @@ public class AdminPanel {
 
 
     @Inject
-    public AdminPanel(TgBotService botService, DishService dishService, MenuService menuService, UserService userService, OrderService orderService, ComplaintsService complaintsService, DishRatingService dishRatingService) {
+    public AdminPanel(TgBotService botService, DishService dishService, MenuService menuService, UserService userService, OrderService orderService, ComplaintsService complaintsService) {
         this.botService = botService;
         this.dishService = dishService;
         this.menuService = menuService;
         this.userService = userService;
         this.orderService = orderService;
         this.complaintsService = complaintsService;
-        this.dishRatingService = dishRatingService;
     }
 
     // Авторизация админа

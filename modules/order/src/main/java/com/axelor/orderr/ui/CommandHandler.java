@@ -36,7 +36,7 @@ public class CommandHandler {
                 adminPanel.awaitingPassword.remove(chatId);
                 return;
             }
-            else if ("dishes".equals(data) || "create_menu".equals(data) || "tomorrow_orders".equals(data) || "back_role_choose".equals(data)) {
+            else if ("dishes".equals(data) || "create_menu".equals(data) || "tomorrow_orders".equals(data) || "show_complaints".equals(data) || "back_role_choose".equals(data)) {
                 adminPanel.adminMenuNav(update);
                 return;
             }
@@ -71,7 +71,7 @@ public class CommandHandler {
             } else if (data.startsWith("select_portion:")) {
                 employeePanel.portionSelection(update);
                 return;
-            } else if ("my_orders".equals(data) || "make_order".equals(data) || "back_role_choose".equals(data)) {
+            } else if ("my_orders".equals(data) || "make_order".equals(data) || "write_compl".equals(data) || "back_role_choose".equals(data)) {
                 employeePanel.employeePanelNav(update);
             } else if ("back_employee_panel".equals(data)) {
                 employeePanel.backToEmployeePanel(update);
@@ -92,9 +92,18 @@ public class CommandHandler {
             return;
         }
 
-        if (message.text() != null && adminPanel.idDishCreating(chatId)) {
+        if (message.text() != null && adminPanel.isDishCreating(chatId)) {
             adminPanel.dishInfoInsert(chatId, message);
             return;
+        }
+
+        if (message.text() != null && employeePanel.isComplWriting(chatId)) {
+            if (message.text().length() > 100 || message.text().length() < 10) {
+                botService.sendMessage(String.valueOf(chatId), "Сообщение должно быть в диапозоне 10 - 100 символов");
+            } else {
+                employeePanel.complaintSaving(chatId, message);
+                return;
+            }
         }
 
         if ("/start".equalsIgnoreCase(text)) {

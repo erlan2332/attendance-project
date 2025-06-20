@@ -1,9 +1,11 @@
 package com.axelor.orderr.ui;
 
 import com.axelor.auth.db.User;
+import com.axelor.order.db.Complaints;
 import com.axelor.order.db.Dish;
 import com.axelor.order.db.Menu;
 import com.axelor.order.db.Orderr;
+import com.axelor.orderr.service.complaints.ComplaintsService;
 import com.axelor.orderr.service.dish.DishService;
 import com.axelor.orderr.service.menu.MenuService;
 import com.axelor.orderr.service.order.OrderService;
@@ -24,18 +26,20 @@ public class AdminPanel {
     private final MenuService menuService;
     private final UserService userService;
     private final OrderService orderService;
+    private final ComplaintsService complaintsService;
 
     public final Map<Long, Integer> awaitingPassword = new HashMap<>();
     private final Map<Long, Dish> pendingDish = new HashMap<>();
 
 
     @Inject
-    public AdminPanel(TgBotService botService, DishService dishService, MenuService menuService, UserService userService, OrderService orderService) {
+    public AdminPanel(TgBotService botService, DishService dishService, MenuService menuService, UserService userService, OrderService orderService, ComplaintsService complaintsService) {
         this.botService = botService;
         this.dishService = dishService;
         this.menuService = menuService;
         this.userService = userService;
         this.orderService = orderService;
+        this.complaintsService = complaintsService;
     }
 
     // Авторизация админа
@@ -82,10 +86,12 @@ public class AdminPanel {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         InlineKeyboardButton dishes = new InlineKeyboardButton("\uD83E\uDD59 Блюда").callbackData("dishes");
         InlineKeyboardButton createMenu = new InlineKeyboardButton("\uD83D\uDCC4 Сделать меню").callbackData("create_menu");
-        markup.addRow(dishes, createMenu);
-        InlineKeyboardButton tomorrow_orders = new InlineKeyboardButton("\uD83D\uDCDCЗаказы на завтра").callbackData("tomorrow_orders");
+        InlineKeyboardButton tomorrow_orders = new InlineKeyboardButton("\uD83D\uDCDC Заказы на завтра").callbackData("tomorrow_orders");
+        InlineKeyboardButton complaints = new InlineKeyboardButton("\uD83D\uDCDC Жалобы/предложения").callbackData("show_complaints");
         InlineKeyboardButton back = new InlineKeyboardButton("⬅️ Назад").callbackData("back_role_choose");
-        markup.addRow(tomorrow_orders, back);
+        markup.addRow(dishes, createMenu);
+        markup.addRow(tomorrow_orders, complaints);
+        markup.addRow(back);
         botService.sendMessage(String.valueOf(chatId), "Добро пожаловать", markup);
     }
 
@@ -103,6 +109,8 @@ public class AdminPanel {
             createTomorrowMenu(chatId, messageId);
         } else if ("tomorrow_orders".equals(data)) {
             showTomorrowOrders(chatId);
+        } else if ("show_complaints".equals(data)) {
+            showComplaintsList(chatId);
         } else if ("back_role_choose".equals(data)) {
             CommandHandler.roleChoose(String.valueOf(chatId), botService);
         }
@@ -150,7 +158,7 @@ public class AdminPanel {
     }
 
     // Создание блюда
-    public boolean idDishCreating(long chatId) {
+    public boolean isDishCreating(long chatId) {
         return pendingDish.containsKey(chatId);
     }
 
@@ -384,5 +392,25 @@ public class AdminPanel {
         InlineKeyboardButton bnt_back = new InlineKeyboardButton("⬅️ Назад").callbackData("back_admin_menu");
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(bnt_back);
         botService.sendMessage(String.valueOf(chatId), order.toString(), markup);
+    }
+
+    public void showComplaintsList(long chatId) {
+        List<Complaints> compList = complaintsService.getCompList();
+        StringBuilder text = new StringBuilder();
+
+        if (!compList.isEmpty()) {
+            text.append("Список жалоб/предложений \n");
+            for (Complaints compl : compList) {
+                text.append("\n")
+                        .append(compl.getText());
+            }
+        } else {
+            text.append("Жалоб/предложений еще нет");
+        }
+
+        InlineKeyboardButton back = new InlineKeyboardButton("Назад").callbackData("back_admin_menu");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup().addRow(back);
+
+        botService.sendMessage(String.valueOf(chatId), text.toString(), markup);
     }
 }

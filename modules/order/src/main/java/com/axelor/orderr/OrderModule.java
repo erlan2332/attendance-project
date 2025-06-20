@@ -1,6 +1,8 @@
 package com.axelor.orderr;
 
 import com.axelor.app.AxelorModule;
+import com.axelor.orderr.service.complaints.ComplaintsService;
+import com.axelor.orderr.service.complaints.ComplaintsServiceImpl;
 import com.axelor.orderr.service.dish.DishService;
 import com.axelor.orderr.service.dish.DishServiceImpl;
 import com.axelor.orderr.service.menu.MenuService;
@@ -20,6 +22,7 @@ public class OrderModule extends AxelorModule {
         bind(MenuService.class).to(MenuServiceImpl.class);
         bind(UserService.class).to(UserServiceImpl.class);
         bind(OrderService.class).to(OrderServiceImpl.class);
+        bind(ComplaintsService.class).to(ComplaintsServiceImpl.class);
         bind(BotLauncher.class);
         bind(TgBotService.class).toProvider(() -> new TgBotService(Config.getToken()));
     }

@@ -1,9 +1,11 @@
 package com.axelor.orderr.ui;
 
 import com.axelor.auth.db.User;
+import com.axelor.order.db.Complaints;
 import com.axelor.order.db.Dish;
 import com.axelor.order.db.Menu;
 import com.axelor.order.db.Orderr;
+import com.axelor.orderr.service.complaints.ComplaintsService;
 import com.axelor.orderr.service.dish.DishService;
 import com.axelor.orderr.service.menu.MenuService;
 import com.axelor.orderr.service.order.OrderService;
@@ -26,20 +28,23 @@ public class EmployeePanel {
     private final DishService dishService;
     private final MenuService menuService;
     private final OrderService orderService;
+    private final ComplaintsService complaintsService;
 
     private final Map<Long, Long> pendingRegistration = new HashMap<>();
     private final Map<Long, Integer> registrationMessage = new HashMap<>();
     private final Map<Long, Orderr> pendingOrders = new HashMap<>();
     private final Map<Long, Integer> dishSelectionMessages = new HashMap<>(); // Сообщения с выбором блюда
     private final Map<Long, Integer> portionSelectionMessages = new HashMap<>();
+    private final Map<Long, Complaints> pendingCompl = new HashMap<>();
 
     @Inject
-    public EmployeePanel(TgBotService botService, UserService userService, DishService dishService, MenuService menuService, OrderService orderService) {
+    public EmployeePanel(TgBotService botService, UserService userService, DishService dishService, MenuService menuService, OrderService orderService, ComplaintsService complaintsService) {
         this.botService = botService;
         this.userService = userService;
         this.dishService = dishService;
         this.menuService = menuService;
         this.orderService = orderService;
+        this.complaintsService = complaintsService;
     }
 
 
@@ -53,7 +58,7 @@ public class EmployeePanel {
 
         User user = userService.getUserByTelegramId(telegramId);
         if (user != null) {
-            botService.sendMessage(String.valueOf(chatId), "Добро пожаловать, " + user.getName());
+            botService.sendMessage(String.valueOf(chatId), "Добро пожаловать ");
             Orderr order = new Orderr();
             order.setUser(user);
             pendingOrders.put(chatId, order);
@@ -106,10 +111,11 @@ public class EmployeePanel {
 
         InlineKeyboardButton btn_my_orders = new InlineKeyboardButton("\uD83D\uDCDC Мои заказы").callbackData("my_orders");
         InlineKeyboardButton btn_make_order = new InlineKeyboardButton("\uD83E\uDD61 Сделать заказ").callbackData("make_order");
+        InlineKeyboardButton btn_write_compl = new InlineKeyboardButton("\uD83E\uDD61 Жалобы/предложения").callbackData("write_compl");
         InlineKeyboardButton btn_back_role_choose = new InlineKeyboardButton("⬅️ Назад").callbackData("back_role_choose");
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.addRow(btn_my_orders, btn_make_order);
-        markup.addRow(btn_back_role_choose);
+        markup.addRow(btn_write_compl, btn_back_role_choose);
         botService.sendMessage(String.valueOf(chatId), "Добро пожаловать", markup);
     }
 
@@ -125,6 +131,9 @@ public class EmployeePanel {
             myOrdersList(chatId);
         } else if ("make_order".equals(data)) {
             showDishList(chatId);
+        } else if ("write_compl".equals(data)) {
+            botService.sendMessage(String.valueOf(chatId), "Что бы вы хотели изменить/внести в меню или сервис?");
+            pendingCompl.put(chatId, new Complaints());
         } else if ("back_role_choose".equals(data)) {
             CommandHandler.roleChoose(String.valueOf(chatId), botService);
         }
@@ -155,7 +164,7 @@ public class EmployeePanel {
         botService.sendMessage(String.valueOf(chatId), text.toString(), markup);
     }
 
-        // возвращение в панель меню сотрудника
+    // возвращение в панель меню сотрудника
     public void backToEmployeePanel(Update update) {
         if (update.callbackQuery() == null) return;
         CallbackQuery callback = update.callbackQuery();
@@ -256,6 +265,22 @@ public class EmployeePanel {
                 persistedOrder.getPortion_size());
 
         employeePanel(chatId, user);
+    }
+
+    public boolean isComplWriting(long chatId) {
+        return pendingCompl.containsKey(chatId);
+    }
+
+    public void complaintSaving(long chatId, Message message) {
+        Complaints complaints = pendingCompl.get(chatId);
+        User user = userService.getUserByTelegramId(chatId);
+        if (pendingCompl.containsKey(chatId)) {
+            complaints.setText(message.text());
+            complaintsService.saveComplaint(complaints);
+            botService.sendMessage(String.valueOf(chatId), "Отправлено. Спасибо за отзыв!");
+            pendingCompl.remove(chatId);
+            employeePanel(chatId, user);
+        }
     }
 }
 

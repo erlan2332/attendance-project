@@ -9,6 +9,7 @@
         <string name="name"/>
         <many-to-one name="menu" ref="Menu"/>
         <one-to-many name="ratings" ref="DishRating" mappedBy="dish"/>
+        <boolean name="idDeleted"/>
     </entity>
 
 </domain-models>

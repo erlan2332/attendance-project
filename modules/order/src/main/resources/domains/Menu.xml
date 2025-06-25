@@ -5,7 +5,7 @@
 
     <module name="order" package="com.axelor.order.db"/>
 
-    <entity name="Menu" cacheable="true">
+    <entity name="Menu">
         <date name="menu_day"/>
         <one-to-many name="dishes" ref="Dish" mappedBy="menu"/>
     </entity>

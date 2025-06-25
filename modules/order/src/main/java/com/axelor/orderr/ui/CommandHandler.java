@@ -36,7 +36,12 @@ public class CommandHandler {
                 adminPanel.awaitingPassword.remove(chatId);
                 return;
             }
-            else if ("dishes".equals(data) || "create_menu".equals(data) || "tomorrow_orders".equals(data) || "show_complaints".equals(data) || "back_role_choose".equals(data)) {
+            else if ("dishes".equals(data)
+                    || "create_menu".equals(data)
+                    || "tomorrow_orders".equals(data)
+                    || "show_complaints".equals(data)
+                    || "month_report".equals(data)
+                    || "back_role_choose".equals(data)) {
                 adminPanel.adminMenuNav(update);
                 return;
             }
@@ -46,7 +51,11 @@ public class CommandHandler {
             else if (data.startsWith("remove_dish:") || "back_show_dishes".equals(data)) {
                 adminPanel.deletionMenuNav(update);
             }
-            else if ("add_dish".equals(data) || "remove_dish".equals(data) || "clear".equals(data) || "menu_ready".equals(data) || "back_admin_menu".equals(data)) {
+            else if ("add_dish".equals(data)
+                    || "remove_dish".equals(data)
+                    || "clear".equals(data)
+                    || "menu_ready".equals(data)
+                    || "back_admin_menu".equals(data)) {
                 adminPanel.tomorrowMenuNav(update);
             }
             else if (data.startsWith("add_tm_dish:") || "back_tomorrow_menu".equals(data)) {
@@ -71,7 +80,10 @@ public class CommandHandler {
             } else if (data.startsWith("select_portion:")) {
                 employeePanel.portionSelection(update);
                 return;
-            } else if ("my_orders".equals(data) || "make_order".equals(data) || "write_compl".equals(data) || "back_role_choose".equals(data)) {
+            } else if ("my_orders".equals(data)
+                    || "make_order".equals(data)
+                    || "write_compl".equals(data)
+                    || "back_role_choose".equals(data)) {
                 employeePanel.employeePanelNav(update);
             } else if ("back_employee_panel".equals(data)) {
                 employeePanel.backToEmployeePanel(update);

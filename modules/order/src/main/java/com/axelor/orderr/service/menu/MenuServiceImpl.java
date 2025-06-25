@@ -35,30 +35,30 @@ public class MenuServiceImpl implements MenuService{
 
     @Override
     @Transactional(rollbackOn = {Exception.class})
-    public Menu addDishToTomorrowMenu(Long dishId) {
+    public void addDishToTomorrowMenu(Long dishId) {
         Menu menu = getTomorrowMenu();
         Dish dish = dishRepository.find(dishId);
         if (dish != null) {
             System.out.println("Dish before: " + dish + ", current menu: " + dish.getMenu());
             dish.setMenu(menu);
             dishRepository.save(dish);
+            dishRepository.flush();
             System.out.println("MenuServiceImpl. Добавлено блюдо: " + dish.getMenu());
         } else {
             System.out.println("Dish with id " + dishId + " not found");
         }
 
-        return menu;
     }
 
     @Override
     @Transactional(rollbackOn = {Exception.class})
-    public Menu removeDishFromTomorrowMenu(Long dishId) {
+    public void removeDishFromTomorrowMenu(Long dishId) {
         Dish dish = dishRepository.find(dishId);
         if (dish != null) {
             dish.setMenu(null);
             dishRepository.save(dish);
         }
-        return getTomorrowMenu();
+        getTomorrowMenu();
     }
 
     @Override
@@ -66,9 +66,12 @@ public class MenuServiceImpl implements MenuService{
     public void clearTomorrowMenu() {
         Menu menu = getTomorrowMenu();
         List<Dish> dishes = dishRepository.all().filter("self.menu = ?", menu).fetch();
+        System.out.println("Dishes to unlink: " + dishes.size());
         for (Dish dish : dishes) {
             dish.setMenu(null);
+            System.out.println("→ " + dish.getName() + " | menu = " + dish.getMenu());
             dishRepository.save(dish);
+            dishRepository.flush();
         }
     }
 }

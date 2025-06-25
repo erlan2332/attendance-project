@@ -22,6 +22,8 @@ import com.pengrad.telegrambot.request.SendMessage;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class EmployeePanel {
     private final TgBotService botService;
@@ -31,6 +33,7 @@ public class EmployeePanel {
     private final OrderService orderService;
     private final ComplaintsService complaintsService;
     private final DishRatingService dishRatingService;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private final Map<Long, Long> pendingRegistration = new HashMap<>();
     private final Map<Long, Integer> registrationMessage = new HashMap<>();
@@ -114,7 +117,7 @@ public class EmployeePanel {
 
         InlineKeyboardButton btn_my_orders = new InlineKeyboardButton("\uD83D\uDCDC Мои заказы").callbackData("my_orders");
         InlineKeyboardButton btn_make_order = new InlineKeyboardButton("\uD83E\uDD61 Сделать заказ").callbackData("make_order");
-        InlineKeyboardButton btn_write_compl = new InlineKeyboardButton("\uD83E\uDD61 Жалобы/предложения").callbackData("write_compl");
+        InlineKeyboardButton btn_write_compl = new InlineKeyboardButton("\uD83D\uDCDD Жалобы/предложения").callbackData("write_compl");
         InlineKeyboardButton btn_back_role_choose = new InlineKeyboardButton("⬅️ Назад").callbackData("back_role_choose");
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.addRow(btn_my_orders, btn_make_order);
@@ -148,6 +151,10 @@ public class EmployeePanel {
         List<Orderr> ordersById = orderService.getOrderById(user);
         StringBuilder text = new StringBuilder();
 
+        if (ordersById.isEmpty()) {
+            text.append("\uD83D\uDE45 У вас еще нет заказов");
+        }
+
         text.append("\uD83D\uDDD3 Ваши заказы:\n");
         for (Orderr orderr : ordersById) {
             text.append("\n")
@@ -155,10 +162,6 @@ public class EmployeePanel {
                     .append(" - ")
                     .append(orderr.getPortion_size())
                     .append(" порция");
-        }
-
-        if (ordersById.isEmpty()) {
-            text.append("\uD83D\uDE45 У вас еще нет заказов");
         }
 
         InlineKeyboardButton btn_back_employee_panel = new InlineKeyboardButton("⬅️ Назад").callbackData("back_employee_panel");

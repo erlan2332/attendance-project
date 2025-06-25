@@ -4,7 +4,7 @@ import com.axelor.order.db.Menu;
 
 public interface MenuService {
     Menu getTomorrowMenu();
-    Menu addDishToTomorrowMenu(Long dishId);
-    Menu removeDishFromTomorrowMenu(Long dishId);
+    void addDishToTomorrowMenu(Long dishId);
+    void removeDishFromTomorrowMenu(Long dishId);
     void clearTomorrowMenu();
 }

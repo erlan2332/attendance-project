@@ -5,7 +5,7 @@
 
     <module name="auth" package="com.axelor.auth.db"/>
 
-    <entity name="User" cacheable="true">
+    <entity name="User">
         <string name="name" required="true" min="2"/>
         <string name="tg_id"/>
         <one-to-many name="users_orderrs" ref="com.axelor.order.db.Orderr" mappedBy="user"/>

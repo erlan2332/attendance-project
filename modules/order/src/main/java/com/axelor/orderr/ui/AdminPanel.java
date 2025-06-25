@@ -6,7 +6,6 @@ import com.axelor.orderr.service.complaints.ComplaintsService;
 import com.axelor.orderr.service.dish.DishService;
 import com.axelor.orderr.service.menu.MenuService;
 import com.axelor.orderr.service.order.OrderService;
-import com.axelor.orderr.service.rating.DishRatingService;
 import com.axelor.orderr.service.user.UserService;
 import com.google.inject.Inject;
 import com.pengrad.telegrambot.model.CallbackQuery;
@@ -16,6 +15,7 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.request.SendMessage;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class AdminPanel {
@@ -85,10 +85,12 @@ public class AdminPanel {
         InlineKeyboardButton dishes = new InlineKeyboardButton("\uD83E\uDD59 Блюда").callbackData("dishes");
         InlineKeyboardButton createMenu = new InlineKeyboardButton("\uD83D\uDCC4 Сделать меню").callbackData("create_menu");
         InlineKeyboardButton tomorrow_orders = new InlineKeyboardButton("\uD83D\uDCDC Заказы на завтра").callbackData("tomorrow_orders");
-        InlineKeyboardButton complaints = new InlineKeyboardButton("\uD83D\uDCDC Жалобы/предложения").callbackData("show_complaints");
+        InlineKeyboardButton complaints = new InlineKeyboardButton("\uD83D\uDCD5 Жалобы/предложения").callbackData("show_complaints");
+        InlineKeyboardButton month_report = new InlineKeyboardButton("\uD83D\uDCCA Месячный отчет").callbackData("month_report");
         InlineKeyboardButton back = new InlineKeyboardButton("⬅️ Назад").callbackData("back_role_choose");
         markup.addRow(dishes, createMenu);
         markup.addRow(tomorrow_orders, complaints);
+        markup.addRow(month_report);
         markup.addRow(back);
         botService.sendMessage(String.valueOf(chatId), "Добро пожаловать", markup);
     }
@@ -109,6 +111,8 @@ public class AdminPanel {
             showTomorrowOrders(chatId);
         } else if ("show_complaints".equals(data)) {
             showComplaintsList(chatId);
+        } else if ("month_report".equals(data)) {
+            showMonthReport(chatId);
         } else if ("back_role_choose".equals(data)) {
             CommandHandler.roleChoose(String.valueOf(chatId), botService);
         }
@@ -165,6 +169,7 @@ public class AdminPanel {
         if (pendingDish.containsKey(chatId)) {
             if (dish.getName() == null) {
                 dish.setName(message.text());
+                dish.setIdDeleted(false);
                 dishService.createDish(dish);
                 botService.sendMessage(String.valueOf(chatId), "Добавлено " + dish.getName());
                 pendingDish.remove(chatId);
@@ -176,23 +181,24 @@ public class AdminPanel {
     // удаление блюда
     public void showDeletionMenu(long chatId) {
         List<Dish> dishesData = dishService.getAllDishes();
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        if (dishesData != null && !dishesData.isEmpty()) {
-            for (Dish dish : dishesData) {
-                InlineKeyboardButton btn_remove = new
-                        InlineKeyboardButton(dish.getName())
-                        .callbackData("remove_dish:" + dish.getId());
-                markup.addRow(btn_remove);
-            }
 
-            InlineKeyboardButton btn_back = new InlineKeyboardButton("⬅️ Готово/Отмена").callbackData("back_show_dishes");
-            markup.addRow(btn_back);
-
-            botService.sendMessage(String.valueOf(chatId), "Выберите блюда для удаления:", markup);
-        } else {
-            botService.sendMessage(String.valueOf(chatId), "Блюдо не удалено");
+        if (dishesData.isEmpty()) {
+            botService.sendMessage(String.valueOf(chatId), "⚠️ Нет доступных блюд для удаления.");
+            return;
         }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        for (Dish dish : dishesData) {
+            InlineKeyboardButton btn_remove = new InlineKeyboardButton(dish.getName())
+                    .callbackData("remove_dish:" + dish.getId());
+            markup.addRow(btn_remove);
+        }
+
+        InlineKeyboardButton btn_back = new InlineKeyboardButton("⬅️ Готово/Отмена").callbackData("back_show_dishes");
+        markup.addRow(btn_back);
+        botService.sendMessage(String.valueOf(chatId), "Выберите блюда для удаления:", markup);
     }
+
 
     public void deletionMenuNav(Update update) {
         if (update.callbackQuery() == null) return;
@@ -211,6 +217,7 @@ public class AdminPanel {
     public void deleteDish(long chatId, CallbackQuery callback) {
         long dishId = Long.parseLong(callback.data().split(":")[1]);
         dishService.deleteDish(dishId);
+        menuService.removeDishFromTomorrowMenu(dishId);
         botService.sendMessage(String.valueOf(chatId), "Блюдо удалено");
     }
 
@@ -267,24 +274,27 @@ public class AdminPanel {
     // Добавление блюда в завтрашнее меню
     public void addDishToTomorrowMenu(long chatId, Update update) {
         List<Dish> dishesData = dishService.getAllDishes();
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        if (dishesData != null && !dishesData.isEmpty()) {
-            for (Dish dish : dishesData) {
-                InlineKeyboardButton btn_remove = new
-                        InlineKeyboardButton(dish.getName())
-                        .callbackData("add_tm_dish:" + dish.getId());
-                markup.addRow(btn_remove);
-            }
 
-            InlineKeyboardButton btn_back = new InlineKeyboardButton("⬅️ Готово/Отмена").callbackData("back_tomorrow_menu");
-            markup.addRow(btn_back);
-
-            botService.sendMessage(String.valueOf(chatId), "Выберите блюда завтрашнего меню:", markup);
-        } else {
-            botService.sendMessage(String.valueOf(chatId), "Сначала добавьте блюда в разделе \n \"\uD83E\uDD59 Блюда\"");
+        if (dishesData.isEmpty()) {
+            botService.sendMessage(String.valueOf(chatId),
+                    "Сначала добавьте блюда в разделе \n \"\uD83E\uDD59 Блюда\"");
             createTomorrowMenu(chatId, update.callbackQuery().maybeInaccessibleMessage().messageId());
+            return;
         }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        for (Dish dish : dishesData) {
+            InlineKeyboardButton btn_remove = new InlineKeyboardButton(dish.getName())
+                    .callbackData("add_tm_dish:" + dish.getId());
+            markup.addRow(btn_remove);
+        }
+
+        InlineKeyboardButton btn_back = new InlineKeyboardButton("⬅️ Готово/Отмена").callbackData("back_tomorrow_menu");
+        markup.addRow(btn_back);
+
+        botService.sendMessage(String.valueOf(chatId), "Выберите блюда завтрашнего меню:", markup);
     }
+
 
     public void addingMenuNav(Update update) {
         if (update.callbackQuery() == null) return;
@@ -350,6 +360,8 @@ public class AdminPanel {
 
     // Меню готово
     public void menuIsReady(long chatId, int messageId) {
+        orderService.deactivateAllOrders();
+
         List<User> users = userService.getUsersList();
         for (User user : users) {
             if (user.getTg_id() == null) {
@@ -358,7 +370,6 @@ public class AdminPanel {
             }
             botService.sendMessage(user.getTg_id(), "✅ Меню готово!");
         }
-        orderService.clearAllOrders();
         createTomorrowMenu(chatId, messageId);
     }
 
@@ -371,8 +382,9 @@ public class AdminPanel {
 
     // Заказы на завтра
     public void showTomorrowOrders(long chatId) {
-        List<Orderr> ordersList = orderService.getOrderList();
+        List<Orderr> ordersList = orderService.getActiveOrders();
         StringBuilder order = new StringBuilder();
+
         if (ordersList.isEmpty()) {
             order.append("\uD83D\uDE45 Заказов еще нет");
         } else {
@@ -391,6 +403,7 @@ public class AdminPanel {
         botService.sendMessage(String.valueOf(chatId), order.toString(), markup);
     }
 
+    // Жалобы/предложения
     public void showComplaintsList(long chatId) {
         List<Complaints> compList = complaintsService.getCompList();
         StringBuilder text = new StringBuilder();
@@ -410,4 +423,26 @@ public class AdminPanel {
 
         botService.sendMessage(String.valueOf(chatId), text.toString(), markup);
     }
+
+    // Отчет за месяц
+    public void showMonthReport(long chatId) {
+        Map<User, BigDecimal> report = orderService.getLastMonthReport();
+
+        StringBuilder sb = new StringBuilder("\uD83D\uDCCA Сумма заказов каждого сотрудника за прошлый месяц \n\n");
+        if (report.isEmpty()) {
+            sb.append("Отчетов еще нет");
+        } else {
+            report.forEach((user, total) -> {
+                sb.append(user.getName())
+                        .append(" - ")
+                        .append(total)
+                        .append(" сом\n");
+            });
+        }
+
+        InlineKeyboardButton back = new InlineKeyboardButton("Назад").callbackData("back_admin_menu");
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup().addRow(back);
+
+        botService.sendMessage(String.valueOf(chatId), sb.toString(), markup);
+    };
 }

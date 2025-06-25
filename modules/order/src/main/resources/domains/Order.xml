@@ -5,11 +5,12 @@
 
     <module name="order" package="com.axelor.order.db"/>
 
-    <entity name="Orderr" cacheable="true">
+    <entity name="Orderr">
         <many-to-one name="user" ref="com.axelor.auth.db.User" column="user_id"/>
         <many-to-one name="dish" ref="Dish"/>
         <string name="portion_size" required="true"/>
         <time name="orderrTime"/>
+        <boolean name="isActive" />
     </entity>
 
 </domain-models>

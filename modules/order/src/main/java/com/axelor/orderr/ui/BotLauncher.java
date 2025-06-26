@@ -3,36 +3,33 @@ package com.axelor.orderr.ui;
 import com.axelor.event.Observes;
 import com.axelor.events.StartupEvent;
 import com.axelor.orderr.service.order.OrderService;
+import com.axelor.orderr.service.user.UserService;
 import com.google.inject.Inject;
+
+import java.util.List;
 
 
 public class BotLauncher {
     private final TgBotService botService;
-    private final AdminPanel adminPanel;
-    private final EmployeePanel employeePanel;
-    private final OrderService orderService;
+    private final ReportScheduler scheduler;
+    private final UserService userService;
+    private final CommandHandler commandHandler;
 
     @Inject
-    public BotLauncher(TgBotService botService, AdminPanel adminPanel, EmployeePanel employeePanel, OrderService orderService) {
-        this.adminPanel = adminPanel;
+    public BotLauncher(TgBotService botService, ReportScheduler scheduler, UserService userService, CommandHandler commandHandler) {
         this.botService = botService;
-        this.employeePanel = employeePanel;
-        this.orderService = orderService;
+        this.scheduler = scheduler;
+        this.userService = userService;
+        this.commandHandler = commandHandler;
     }
 
     public void Launcher(@Observes StartupEvent startupEvent) {
-        String token = Config.getToken();
-//        List<String> allChatIds = userService.getUsersTelegramId();
-//
-//        for (String chatId : allChatIds) {
-//            botService.sendMessage(chatId, "cheers\n    /start");
-//        }
+        List<String> allChatIds = userService.getUsersTelegramId();
 
-        botService.sendMessage("1607228323", "cheers\n    /start");
+        for (String chatId : allChatIds) {
+            botService.sendMessage(chatId, "cheers\n    /start");
+        }
 
-        CommandHandler commandHandler = new CommandHandler(botService, adminPanel, employeePanel);
-
-        ReportScheduler scheduler = new ReportScheduler(orderService, botService);
         scheduler.scheduleMonthlyReport();
 
         botService.setUpdatesListener(commandHandler);

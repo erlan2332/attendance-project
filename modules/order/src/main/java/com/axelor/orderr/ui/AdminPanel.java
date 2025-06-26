@@ -68,7 +68,7 @@ public class AdminPanel {
         }
 
         String inputPassword = message.text();
-        if (inputPassword.equals(Config.ADMIN_PASSWORD)) {
+        if (inputPassword.equals(Config.getAdminPassword())){
             awaitingPassword.remove(chatId);
             adminMenu(chatId);
         } else {
@@ -444,5 +444,5 @@ public class AdminPanel {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup().addRow(back);
 
         botService.sendMessage(String.valueOf(chatId), sb.toString(), markup);
-    };
+    }
 }

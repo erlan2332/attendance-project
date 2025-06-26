@@ -2,6 +2,8 @@ package com.axelor.orderr.ui;
 
 import com.axelor.auth.db.User;
 import com.axelor.orderr.service.order.OrderService;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -13,12 +15,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class ReportScheduler {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final OrderService orderService;
     private final TgBotService botService;
 
+    @Inject
     public ReportScheduler(OrderService orderService, TgBotService botService) {
         this.orderService = orderService;
         this.botService = botService;
@@ -51,6 +55,7 @@ public class ReportScheduler {
                     + total
                     + " сом";
             botService.sendMessage(user.getTg_id(), text);
+            System.out.println("Отчет отправлен пользвателю " + user.getName() + " - " + user.getTg_id());
         });
         System.out.println("Сообщение с отчетом отправлено в " + LocalDateTime.now());
     }

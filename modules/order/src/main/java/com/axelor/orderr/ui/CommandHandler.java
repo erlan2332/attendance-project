@@ -1,6 +1,7 @@
 package com.axelor.orderr.ui;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.pengrad.telegrambot.model.CallbackQuery;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
@@ -8,6 +9,7 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.request.SendMessage;
 
+@Singleton
 public class CommandHandler {
     private final TgBotService botService;
     private final AdminPanel adminPanel;

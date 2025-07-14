@@ -44,5 +44,4 @@ dependencyResolutionManagement {
 rootProject.name = 'open-platform-demo'
 
 include 'modules:attendance-tracker'
-include 'modules:order'
 include "axelor-meta"

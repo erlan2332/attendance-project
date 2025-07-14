@@ -83,25 +83,31 @@ public class AttendanceService {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rowIterator = sheet.iterator();
 
-            boolean headerFound = false;
+            int skipped = 0;
 
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
-                if (!headerFound) {
-                    if (row.getCell(0) != null && getCellValue(row.getCell(0)).toLowerCase().contains("person id")) {
-                        headerFound = true;
-                    }
-                    continue; // Пропускаем строку с заголовками
+
+                // Пропускаем первые 2 строки
+                if (skipped < 2) {
+                    skipped++;
+                    continue;
                 }
 
-                if (row.getPhysicalNumberOfCells() < 5) continue;
+                // Пропускаем заголовок (строка 3)
+                if (skipped == 2) {
+                    skipped++;
+                    continue;
+                }
+
+                if (row.getPhysicalNumberOfCells() < 6) continue;
 
                 try {
                     String personId = getCellValue(row.getCell(0)).replace("'", "").trim();
                     String fullName = getCellValue(row.getCell(1)).trim();
                     String location = getCellValue(row.getCell(2)).trim();
                     String timeStr = getCellValue(row.getCell(3)).trim();
-                    String checkpoint = getCellValue(row.getCell(4)).trim();
+                    String checkpoint = getCellValue(row.getCell(5)).trim(); // было cell(4), стало cell(5)
 
                     if (personId.isEmpty() || timeStr.isEmpty() || checkpoint.isEmpty()) continue;
 
@@ -147,6 +153,7 @@ public class AttendanceService {
             throw new RuntimeException("Ошибка обработки Excel-файла", e);
         }
     }
+
 
     private void importFromCsv(File file) {
         System.out.println("📄 Импорт из CSV: " + file.getName());

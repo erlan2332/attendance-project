@@ -16,7 +16,7 @@ allprojects {
 
   java {
     toolchain {
-      languageVersion = JavaLanguageVersion.of(17)
+      languageVersion = JavaLanguageVersion.of(11)
     }
   }
 
@@ -38,7 +38,6 @@ allprojects {
 dependencies {
   // add module dependencies
   implementation project(':modules:attendance-tracker')
-  implementation project(':modules:order')
   implementation 'org.apache.commons:commons-csv:1.9.0'
 
 }
